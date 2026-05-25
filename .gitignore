@@ -1,0 +1,8 @@
+build/
+build_test
+*.o
+*.a
+*.so
+.vscode/
+.idea/
+cmake-build-*/
