@@ -1,0 +1,40 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ develop, feature/** ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cod
+        uses: actions/checkout@v4
+
+      - name: Instalare g++
+        run: sudo apt-get install -y g++
+
+      - name: Compilare proiect
+        run: |
+          g++ -std=c++17 -Wall -Iinclude \
+            src/Film.cpp src/Sala.cpp src/Rezervare.cpp \
+            src/RezervareOnline.cpp src/Cinematograf.cpp \
+            ui_terminal/UITerminal.cpp \
+            ui_terminal/UIAdmin.cpp \
+            ui_terminal/UIAngajat.cpp \
+            src/main.cpp \
+            -o cinema
+
+      - name: Compilare teste
+        run: |
+          g++ -std=c++17 -Iinclude \
+            src/Film.cpp src/Sala.cpp src/Rezervare.cpp \
+            src/RezervareOnline.cpp src/Cinematograf.cpp \
+            tests/test_rezervari.cpp \
+            -o cinema_tests
+
+      - name: Rulare teste
+        run: ./cinema_tests
