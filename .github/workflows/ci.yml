@@ -5,6 +5,7 @@ on:
     branches: [ develop, feature/** ]
   pull_request:
     branches: [ develop ]
+  workflow_dispatch:   # permite rularea manuala din GitHub
 
 jobs:
   build-and-test:
