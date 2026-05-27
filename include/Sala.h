@@ -16,10 +16,14 @@ private:
     void valideazaIndex(int rand, int col) const;
 
 public:
+    // Constructor normal — ID generat automat
     Sala(const std::string& nume, int nrRanduri, int nrColoane);
 
-    int         getId()      const { return id; }
-    std::string getNume()    const { return nume; }
+    // Constructor pentru incarcare din fisier — pastreaza ID-ul existent
+    Sala(int id, const std::string& nume, int nrRanduri, int nrColoane);
+
+    int         getId()        const { return id; }
+    std::string getNume()      const { return nume; }
     int         getNrRanduri() const { return nrRanduri; }
     int         getNrColoane() const { return nrColoane; }
 

@@ -10,9 +10,6 @@
 #include "../ui_qt/MainWindow.h"
 #endif
 
-// Fisierul in care se salveaza rezervarile
-static const std::string FISIER_REZERVARI = "rezervari.csv";
-
 static void seedDemoData(Cinematograf& cinema) {
     cinema.adaugaFilm(Film("Inception",       "SF",      148, TipFilm::_3D, "Un hot de vise intra in mintile oamenilor pentru a le fura secretele."));
     cinema.adaugaFilm(Film("Interstellar",    "SF",      169, TipFilm::_2D, "Un grup de astronauti calatoresc prin univers in cautarea unui nou camin."));
@@ -41,11 +38,13 @@ int main(int argc, char* argv[]) {
     std::string mod = argv[1];
     Cinematograf cinema("Cinema Central");
 
-    // 1. Incarca datele demo
-    seedDemoData(cinema);
-
-    // 2. Incarca rezervarile salvate anterior (daca exista)
-    Persistenta::incarca(FISIER_REZERVARI, cinema);
+    // Incearca sa incarce datele salvate.
+    // Daca nu exista fisiere (prima rulare), incarca datele demo si le salveaza.
+    if (!Persistenta::incarcaTot(cinema)) {
+        std::cout << "[PERSISTENTA] Prima rulare — se incarca datele demo.\n";
+        seedDemoData(cinema);
+        Persistenta::salveazaTot(cinema);
+    }
 
     if (mod == "--staff") {
         std::cout << Color::CYAN << Color::BOLD
@@ -68,8 +67,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        // 3. Salveaza rezervarile la iesire (doar pentru --staff)
-        Persistenta::salveaza(FISIER_REZERVARI, cinema);
+        // Salveaza tot la iesire
+        Persistenta::salveazaTot(cinema);
 
     } else if (mod == "--client") {
 #ifdef BUILD_QT_UI
@@ -77,7 +76,6 @@ int main(int argc, char* argv[]) {
         MainWindow window(cinema);
         window.show();
         return app.exec();
-        // Nota: Qt salveaza dupa fiecare rezervare din RezervareDialog
 #else
         std::cerr << Color::RED
                   << "UI-ul Qt nu este disponibil in aceasta compilare.\n"

@@ -14,8 +14,13 @@ private:
     std::string posterPath;
 
 public:
+    // Constructor normal — genereaza ID automat
     Film(const std::string& titlu, const std::string& gen,
          int durata, TipFilm tip, const std::string& descriere = "");
+
+    // Constructor pentru incarcare din fisier — pastreaza ID-ul existent
+    Film(int id, const std::string& titlu, const std::string& gen,
+         int durata, TipFilm tip, const std::string& descriere);
 
     int         getId()        const { return id; }
     std::string getTitlu()     const { return titlu; }
