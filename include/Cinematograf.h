@@ -15,7 +15,6 @@ private:
     std::vector<std::unique_ptr<Sala>>     sali;
     std::vector<std::unique_ptr<Rezervare>> rezervari;
 
-    // Helper: gaseste film/sala sau arunca exceptie
     Film* findFilm(int filmId) const;
     Sala* findSala(int salaId) const;
 
@@ -25,7 +24,6 @@ public:
 
     std::string getNume() const;
 
-    // --- ICinemaService ---
     void adaugaFilm(const Film& film)       override;
     void stergeFilm(int filmId)             override;
     void adaugaSala(Sala* sala)             override;
@@ -50,4 +48,6 @@ public:
     std::vector<Film*>      getFilme()          const override;
     Sala*                   getSala(int salaId) const override;
     std::vector<Rezervare*> getRezervari()      const override;
+
+    std::vector<Sala*>      getSali()           const;
 };

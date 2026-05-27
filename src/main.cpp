@@ -9,6 +9,25 @@
 #include "../ui_qt/MainWindow.h"
 #endif
 
+// Populeaza cinematograful cu date demo pentru prezentare
+static void seedDemoData(Cinematograf& cinema) {
+    cinema.adaugaFilm(Film("Inception",       "SF",      148, TipFilm::_3D, "Un hot de vise"));
+    cinema.adaugaFilm(Film("Interstellar",    "SF",      169, TipFilm::_2D, "Calatorie in spatiu"));
+    cinema.adaugaFilm(Film("Dune: Part Two",  "SF",      167, TipFilm::_3D, "Continuarea epicei"));
+    cinema.adaugaFilm(Film("Oppenheimer",     "Drama",   180, TipFilm::_2D, "Parintele bombei atomice"));
+    cinema.adaugaFilm(Film("The Dark Knight", "Actiune", 152, TipFilm::_2D, "Batman vs Joker"));
+
+    Sala* s1 = new Sala("Sala 1", 6, 8);
+    // Cateva locuri VIP in primul rand
+    for (int c = 0; c < 8; ++c) s1->setTipLoc(0, c, TipLoc::VIP);
+    // Cateva locuri Student in ultimul rand
+    for (int c = 0; c < 8; ++c) s1->setTipLoc(5, c, TipLoc::STUDENT);
+    cinema.adaugaSala(s1);
+
+    Sala* s2 = new Sala("Sala 2", 5, 6);
+    cinema.adaugaSala(s2);
+}
+
 static void printUsage(const std::string& prog) {
     std::cout << "Utilizare:\n"
               << "  " << prog << " --staff    # UI terminal (admin / angajat)\n"
@@ -47,6 +66,7 @@ int main(int argc, char* argv[]) {
 
     } else if (mod == "--client") {
 #ifdef BUILD_QT_UI
+        seedDemoData(cinema);
         QApplication app(argc, argv);
         MainWindow window(cinema);
         window.show();

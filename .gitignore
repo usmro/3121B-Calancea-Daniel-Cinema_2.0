@@ -6,3 +6,6 @@ build_test
 .vscode/
 .idea/
 cmake-build-*/
+*.Zone.Identifier
+cinema
+3121B-Calancea-Daniel-Cinema_2.0

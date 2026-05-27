@@ -98,7 +98,6 @@ void Cinematograf::realizeazaRezervare(int filmId, int salaId,
                                        int rand, int col) {
     Film* film = findFilm(filmId);
     Sala* sala = findSala(salaId);
-    // ocupa() arunca LocOcupatException / IndexInvalidException daca e cazul
     sala->ocupa(rand, col);
     rezervari.push_back(std::make_unique<Rezervare>(film, sala, rand, col));
 }
@@ -120,7 +119,6 @@ void Cinematograf::anuleazaRezervare(int rezervareId) {
                                return r->getId() == rezervareId;
                            });
     if (it == rezervari.end()) throw RezervareNotFoundException(rezervareId);
-    // Elibereaza locul
     (*it)->getSala()->elibereaza((*it)->getRand(), (*it)->getCol());
     rezervari.erase(it);
 }
@@ -158,7 +156,6 @@ std::vector<Film*> Cinematograf::filtreazaDupaGen(const std::string& gen) const 
 std::vector<Film*> Cinematograf::filtreazaDisponibile() const {
     std::vector<Film*> rez;
     for (auto& f : filme) {
-        // Cauta o sala asociata cu locuri libere
         for (auto& s : sali)
             if (s->areLocuriLibere()) {
                 rez.push_back(const_cast<Film*>(&f));
@@ -184,5 +181,12 @@ std::vector<Rezervare*> Cinematograf::getRezervari() const {
     std::vector<Rezervare*> rez;
     for (auto& r : rezervari)
         rez.push_back(r.get());
+    return rez;
+}
+
+std::vector<Sala*> Cinematograf::getSali() const {
+    std::vector<Sala*> rez;
+    for (auto& s : sali)
+        rez.push_back(s.get());
     return rez;
 }
