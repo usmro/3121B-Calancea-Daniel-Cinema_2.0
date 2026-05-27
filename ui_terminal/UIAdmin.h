@@ -2,22 +2,14 @@
 #include "UITerminal.h"
 
 class UIAdmin : public UITerminal {
-private:
-    void meniuPrincipal();
+public:
+    explicit UIAdmin(Cinematograf& cinema);
+    void run();
 
-    // Gestiune (doar admin)
+private:
+    void afiseazaMeniu() const;
     void adaugaFilm();
     void stergeFilm();
     void adaugaSala();
     void stergeSala();
-
-    // Vizualizare (shared cu angajat)
-    void afiseazaFilme();
-    void afiseazaLocuri();
-    void afiseazaRezervari();
-    void cautaFilme();
-
-public:
-    explicit UIAdmin(Cinematograf& cinema);
-    void run() override;
 };

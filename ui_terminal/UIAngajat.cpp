@@ -1,122 +1,73 @@
-#include "UIAngajat.h"
 #include "../include/Exceptii.h"
+#include "UIAngajat.h"
 #include <iostream>
 
 UIAngajat::UIAngajat(Cinematograf& cinema) : UITerminal(cinema) {}
 
-void UIAngajat::run() {
-    meniuPrincipal();
-}
-
-void UIAngajat::meniuPrincipal() {
-    while (true) {
-        clearScreen();
-        printBox("CINEMA SISTEM  —  Angajat", 50);
-        std::cout << "\n"
-                  << Color::GREEN << "  [1]" << Color::RESET << " Afiseaza filme\n"
-                  << Color::GREEN << "  [2]" << Color::RESET << " Afiseaza locuri sala\n"
-                  << Color::GREEN << "  [3]" << Color::RESET << " Afiseaza rezervari\n"
-                  << Color::GREEN << "  [4]" << Color::RESET << " Cauta filme\n"
-                  << Color::CYAN  << "  [5]" << Color::RESET << " Realizeaza rezervare\n"
-                  << Color::RED   << "  [0]" << Color::RESET << " Iesire\n\n";
-
-        int opt = readInt("Optiune");
-        switch (opt) {
-            case 1: afiseazaFilme();       break;
-            case 2: afiseazaLocuri();      break;
-            case 3: afiseazaRezervari();   break;
-            case 4: cautaFilme();          break;
-            case 5: realizeazaRezervare(); break;
-            case 0: return;
-            default: printError("Optiune invalida."); break;
-        }
-        std::cout << "\n"; readString("Apasati ENTER pentru a continua...");
-    }
-}
-
-void UIAngajat::afiseazaFilme() {
+void UIAngajat::afiseazaMeniu() const {
     clearScreen();
-    printBox("FILME DISPONIBILE", 50);
-    std::cout << "\n";
-    cinema.afiseazaFilme();
-}
-
-void UIAngajat::afiseazaLocuri() {
-    clearScreen();
-    printBox("AFISARE LOCURI SALA", 50);
-    int salaId = readInt("ID sala");
-    try {
-        std::cout << "\n";
-        cinema.afiseazaLocuri(salaId);
-    } catch (const CinemaException& e) {
-        printError(e.what());
-    }
-}
-
-void UIAngajat::afiseazaRezervari() {
-    clearScreen();
-    printBox("REZERVARI EXISTENTE", 50);
-    std::cout << "\n";
-    cinema.afiseazaRezervari();
-}
-
-void UIAngajat::cautaFilme() {
-    clearScreen();
-    printBox("CAUTA FILME", 50);
-    std::cout << "\n";
-    std::cout << Color::CYAN
-              << "  [1] Dupa titlu\n"
-              << "  [2] Dupa tip (2D/3D)\n"
-              << "  [3] Dupa gen\n"
-              << "  [4] Doar disponibile\n"
-              << Color::RESET;
-    int opt = readInt("Optiune");
-
-    std::vector<Film*> rezultat;
-    if (opt == 1) {
-        std::string titlu = readString("Titlu (partial)");
-        rezultat = cinema.cautaFilme(titlu);
-    } else if (opt == 2) {
-        int t = readInt("Tip (1=2D, 2=3D)");
-        rezultat = cinema.filtreazaDupaTip(t == 2 ? TipFilm::_3D : TipFilm::_2D);
-    } else if (opt == 3) {
-        std::string gen = readString("Gen");
-        rezultat = cinema.filtreazaDupaGen(gen);
-    } else if (opt == 4) {
-        rezultat = cinema.filtreazaDisponibile();
-    }
-
-    std::cout << "\n";
-    if (rezultat.empty())
-        printInfo("Niciun film gasit.");
-    else {
-        printInfo(std::to_string(rezultat.size()) + " film(e) gasite:");
-        std::cout << "\n";
-        for (auto* f : rezultat) f->afiseaza();
-    }
+    printBox("ANGAJAT — Cinema Central");
+    std::cout << "\n"
+              << "  [1] Afiseaza filme\n"
+              << "  [2] Afiseaza locuri sala\n"
+              << "  [3] Cauta filme\n"
+              << "  [4] Afiseaza rezervari\n"
+              << "  [5] Realizeaza rezervare\n"
+              << "  [6] Anuleaza rezervare\n"
+              << "  [0] Iesire\n";
+    printSeparator();
 }
 
 void UIAngajat::realizeazaRezervare() {
     clearScreen();
-    printBox("REZERVARE NOUA", 50);
+    printBox("Realizeaza Rezervare");
     cinema.afiseazaFilme();
-    int filmId = readInt("ID film");
-    int salaId = readInt("ID sala");
-
+    int filmId = readInt("\nID film: ", 1, 9999);
+    auto sali = cinema.getSali();
+    if (sali.empty()) { printError("Nu exista sali!"); readString(""); return; }
+    std::cout << "\n  Sali disponibile:\n";
+    for (auto* s : sali)
+        std::cout << "    [" << s->getId() << "] " << s->getNume()
+                  << " (" << s->getNumarLocuriLibere() << " locuri libere)\n";
+    int salaId = readInt("ID sala: ", 1, 9999);
     try {
         cinema.afiseazaLocuri(salaId);
-    } catch (const CinemaException& e) {
-        printError(e.what());
-        return;
-    }
-
-    int rand = readInt("Rand (incepand cu 1)") - 1;
-    int col  = readInt("Coloana (incepand cu 1)") - 1;
-
-    try {
+        int rand = readInt("Rand: ", 1, 99) - 1;
+        int col  = readInt("Coloana: ", 1, 99) - 1;
         cinema.realizeazaRezervare(filmId, salaId, rand, col);
         printSuccess("Rezervare realizata cu succes!");
     } catch (const CinemaException& e) {
         printError(e.what());
+    }
+    readString("Apasa Enter...");
+}
+
+void UIAngajat::anuleazaRezervare() {
+    clearScreen();
+    printBox("Anuleaza Rezervare");
+    cinema.afiseazaRezervari();
+    int id = readInt("\nID rezervare de anulat: ", 1, 9999);
+    try {
+        cinema.anuleazaRezervare(id);
+        printSuccess("Rezervarea a fost anulata!");
+    } catch (const CinemaException& e) {
+        printError(e.what());
+    }
+    readString("Apasa Enter...");
+}
+
+void UIAngajat::run() {
+    while (true) {
+        afiseazaMeniu();
+        int opt = readInt("> ", 0, 6);
+        switch (opt) {
+            case 1: afiseazaFilme();       break;
+            case 2: afiseazaLocuri();      break;
+            case 3: cautaFilme();          break;
+            case 4: afiseazaRezervari();   break;
+            case 5: realizeazaRezervare(); break;
+            case 6: anuleazaRezervare();   break;
+            case 0: return;
+        }
     }
 }

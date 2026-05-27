@@ -1,5 +1,6 @@
 #pragma once
 #include "Rezervare.h"
+#include <string>
 
 class RezervareOnline : public Rezervare {
 private:
@@ -10,8 +11,8 @@ public:
     RezervareOnline(Film* film, Sala* sala, int rand, int col,
                     const std::string& email);
 
-    std::string getEmailClient()    const;
-    bool        isConfirmareTrimisa() const;
+    std::string getEmail()             const { return emailClient; }
+    bool        isConfirmareTrimisa()  const { return confirmareTrimiasa; }
     void        trimitConfirmare();
 
     void        afiseaza() const override;

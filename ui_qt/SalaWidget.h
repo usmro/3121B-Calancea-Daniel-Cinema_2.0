@@ -4,15 +4,12 @@
 
 class SalaWidget : public QDialog {
     Q_OBJECT
-
 public:
     SalaWidget(Cinematograf& cinema, int filmId, QWidget* parent = nullptr);
 
 private:
     Cinematograf& cinema;
-    int           filmId;
-
+    int filmId;
     void setupUI();
-    void onLocSelectat(int rand, int col, int salaId);
-    void refresh();
+    void onLocSelectat(int salaId, int rand, int col);
 };

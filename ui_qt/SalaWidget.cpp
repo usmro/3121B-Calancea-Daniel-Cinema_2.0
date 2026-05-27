@@ -1,183 +1,168 @@
 #include "SalaWidget.h"
 #include "RezervareDialog.h"
-#include "../include/Sala.h"
-#include "../include/Film.h"
-#include "../include/Exceptii.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QTabWidget>
 
 SalaWidget::SalaWidget(Cinematograf& cinema, int filmId, QWidget* parent)
     : QDialog(parent), cinema(cinema), filmId(filmId)
 {
-    setWindowTitle("Selecteaza locul");
-    setMinimumSize(520, 460);
+    setWindowTitle("Selecteaza Locul");
+    setMinimumSize(520, 480);
+    setStyleSheet("QDialog { background:#f5f6fa; }");
     setupUI();
 }
 
 void SalaWidget::setupUI() {
-    // Curata layout-ul existent daca e un refresh
-    if (layout()) {
-        QLayoutItem* item;
-        while ((item = layout()->takeAt(0))) {
-            delete item->widget();
-            delete item;
-        }
-        delete layout();
-    }
+    QVBoxLayout* main = new QVBoxLayout(this);
+    main->setContentsMargins(20, 16, 20, 16);
+    main->setSpacing(12);
 
-    QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(24, 20, 24, 20);
-    mainLayout->setSpacing(14);
-
-    // Gaseste filmul
+    // Titlu
     Film* film = nullptr;
     for (auto* f : cinema.getFilme())
         if (f->getId() == filmId) { film = f; break; }
 
-    // Header cu info film
-    if (film) {
-        QLabel* filmInfo = new QLabel(
-            QString("%1  —  %2")
-                .arg(QString::fromStdString(film->getTitlu()))
-                .arg(QString::fromStdString(film->tipToString())),
-            this);
-        filmInfo->setStyleSheet(
-            "font-size: 17px; font-weight: bold; color: #2c3e50;");
-        mainLayout->addWidget(filmInfo);
-    }
-
-    // Ecran
-    QLabel* ecran = new QLabel("[ E C R A N ]", this);
-    ecran->setAlignment(Qt::AlignCenter);
-    ecran->setStyleSheet(
-        "background: #dfe6e9; border-radius: 6px;"
-        "padding: 6px; font-weight: bold;"
-        "color: #95a5a6; letter-spacing: 6px; font-size: 13px;");
-    mainLayout->addWidget(ecran);
-
-    // Scroll area pentru grila de locuri
-    QScrollArea* scroll = new QScrollArea(this);
-    scroll->setWidgetResizable(true);
-    scroll->setStyleSheet("border: none;");
-
-    QWidget* gridContainer = new QWidget();
-    QVBoxLayout* gridWrap = new QVBoxLayout(gridContainer);
-    gridWrap->setContentsMargins(0, 8, 0, 8);
-
-    // Afiseaza toate salile disponibile
-    bool oriceSala = false;
-    for (auto* sala : cinema.getSali()) {
-        oriceSala = true;
-
-        QLabel* salaLabel = new QLabel(
-            QString("Sala: %1  (%2 locuri libere)")
-                .arg(QString::fromStdString(sala->getNume()))
-                .arg(sala->getNumarLocuriLibere()),
-            this);
-        salaLabel->setStyleSheet(
-            "font-size: 13px; color: #7f8c8d; font-weight: bold; margin-top: 8px;");
-        gridWrap->addWidget(salaLabel);
-
-        QGridLayout* seatGrid = new QGridLayout();
-        seatGrid->setSpacing(5);
-
-        for (int r = 0; r < sala->getNrRanduri(); ++r) {
-            // Numar rand
-            QLabel* randLabel = new QLabel(QString::number(r + 1), this);
-            randLabel->setFixedSize(20, 38);
-            randLabel->setAlignment(Qt::AlignCenter);
-            randLabel->setStyleSheet("color: #95a5a6; font-size: 11px;");
-            seatGrid->addWidget(randLabel, r, 0);
-
-            for (int c = 0; c < sala->getNrColoane(); ++c) {
-                QPushButton* seat = new QPushButton(this);
-                seat->setFixedSize(38, 38);
-
-                if (!sala->esteLiber(r, c)) {
-                    seat->setEnabled(false);
-                    seat->setStyleSheet(
-                        "background: #e74c3c; border-radius: 6px; border: none;");
-                    seat->setToolTip("Ocupat");
-                } else {
-                    TipLoc tip = sala->getTipLoc(r, c);
-                    QString stil, label;
-                    if (tip == TipLoc::VIP) {
-                        stil = "QPushButton { background:#f39c12; border-radius:6px;"
-                               "  border:none; color:white; font-weight:bold; font-size:11px;}"
-                               "QPushButton:hover{background:#e67e22;}";
-                        label = "V";
-                    } else if (tip == TipLoc::STUDENT) {
-                        stil = "QPushButton { background:#2ecc71; border-radius:6px;"
-                               "  border:none; color:white; font-weight:bold; font-size:11px;}"
-                               "QPushButton:hover{background:#27ae60;}";
-                        label = "S";
-                    } else {
-                        stil = "QPushButton { background:#2ecc71; border-radius:6px; border:none;}"
-                               "QPushButton:hover{background:#27ae60;}";
-                        label = "";
-                    }
-                    seat->setStyleSheet(stil);
-                    seat->setText(label);
-                    seat->setToolTip(
-                        QString("Rand %1, Col %2").arg(r + 1).arg(c + 1));
-
-                    int capR = r, capC = c, capSalaId = sala->getId();
-                    connect(seat, &QPushButton::clicked, this,
-                            [this, capR, capC, capSalaId]() {
-                                onLocSelectat(capR, capC, capSalaId);
-                            });
-                }
-                seatGrid->addWidget(seat, r, c + 1);
-            }
-        }
-
-        QWidget* gridW = new QWidget();
-        gridW->setLayout(seatGrid);
-        gridWrap->addWidget(gridW);
-    }
-
-    if (!oriceSala) {
-        QLabel* noSala = new QLabel("Nu exista sali disponibile.", this);
-        noSala->setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;");
-        gridWrap->addWidget(noSala);
-    }
-
-    scroll->setWidget(gridContainer);
-    mainLayout->addWidget(scroll);
+    QLabel* title = new QLabel(this);
+    if (film)
+        title->setText(QString("<b>%1</b> — Selecteaza locul")
+                       .arg(QString::fromStdString(film->getTitlu())));
+    else
+        title->setText("Selecteaza locul");
+    title->setStyleSheet("font-size:17px; color:#2c3e50;");
+    main->addWidget(title);
 
     // Legenda
     QHBoxLayout* legend = new QHBoxLayout();
-
-    auto addLegend = [&](const QString& bg, const QString& text) {
-        QLabel* dot = new QLabel(this);
-        dot->setFixedSize(16, 16);
-        dot->setStyleSheet(
-            QString("background: %1; border-radius: 3px;").arg(bg));
-        legend->addWidget(dot);
-        QLabel* lbl = new QLabel(text, this);
-        lbl->setStyleSheet("font-size: 12px; color: #7f8c8d;");
-        legend->addWidget(lbl);
-        legend->addSpacing(14);
+    auto mkLeg = [&](const QString& color, const QString& text) {
+        QLabel* l = new QLabel(this);
+        l->setText(QString("<span style='background:%1;color:%1;'>___</span> %2")
+                   .arg(color, text));
+        l->setStyleSheet("font-size:11px; color:#555;");
+        legend->addWidget(l);
     };
-
-    addLegend("#2ecc71", "Liber");
-    addLegend("#e74c3c", "Ocupat");
-    addLegend("#f39c12", "VIP  (+50%)");
-    addLegend("#2ecc71", "S = Student  (-20%)");
+    QLabel* leg1 = new QLabel("■ Liber", this);  leg1->setStyleSheet("color:#27ae60; font-size:11px;");
+    QLabel* leg2 = new QLabel("■ VIP",   this);  leg2->setStyleSheet("color:#f39c12; font-size:11px;");
+    QLabel* leg3 = new QLabel("■ Student",this); leg3->setStyleSheet("color:#3498db; font-size:11px;");
+    QLabel* leg4 = new QLabel("■ Ocupat",this);  leg4->setStyleSheet("color:#e74c3c; font-size:11px;");
+    legend->addWidget(leg1); legend->addWidget(leg2);
+    legend->addWidget(leg3); legend->addWidget(leg4);
     legend->addStretch();
-    mainLayout->addLayout(legend);
+    main->addLayout(legend);
+
+    // Tab-uri pentru fiecare sala
+    QTabWidget* tabs = new QTabWidget(this);
+    tabs->setStyleSheet("QTabBar::tab { padding:6px 16px; font-size:12px; }");
+
+    auto sali = cinema.getSali();
+    if (sali.empty()) {
+        QLabel* noSala = new QLabel("Nu exista sali disponibile.", this);
+        main->addWidget(noSala);
+    }
+
+    for (Sala* sala : sali) {
+        QWidget* page = new QWidget();
+        QVBoxLayout* pagelay = new QVBoxLayout(page);
+        pagelay->setSpacing(8);
+
+        // Ecran
+        QLabel* screen = new QLabel("[ E C R A N ]", page);
+        screen->setAlignment(Qt::AlignCenter);
+        screen->setStyleSheet(
+            "background:#bdc3c7; color:#7f8c8d; border-radius:4px;"
+            "padding:4px; font-size:11px; font-weight:bold;");
+        pagelay->addWidget(screen);
+
+        // Grid locuri
+        QScrollArea* scroll = new QScrollArea(page);
+        scroll->setWidgetResizable(true);
+        scroll->setStyleSheet("border:none;");
+
+        QWidget* grid_w = new QWidget();
+        QGridLayout* grid = new QGridLayout(grid_w);
+        grid->setSpacing(4);
+
+        int salaId = sala->getId();
+        int rows = sala->getNrRanduri();
+        int cols = sala->getNrColoane();
+
+        for (int r = 0; r < rows; ++r) {
+            QLabel* rowLbl = new QLabel(QString::number(r+1), grid_w);
+            rowLbl->setStyleSheet("font-size:11px; color:#aaa;");
+            rowLbl->setFixedWidth(20);
+            grid->addWidget(rowLbl, r, 0);
+
+            for (int c = 0; c < cols; ++c) {
+                QPushButton* btn = new QPushButton(grid_w);
+                btn->setFixedSize(36, 32);
+
+                if (!sala->esteLiber(r, c)) {
+                    btn->setText("X");
+                    btn->setEnabled(false);
+                    btn->setStyleSheet(
+                        "background:#e74c3c; color:white; border-radius:4px;"
+                        "font-size:11px; font-weight:bold;");
+                } else {
+                    TipLoc tip = sala->getTipLoc(r, c);
+                    QString bg, label;
+                    if (tip == TipLoc::VIP) {
+                        bg = "#f39c12"; label = "V";
+                    } else if (tip == TipLoc::STUDENT) {
+                        bg = "#3498db"; label = "S";
+                    } else {
+                        bg = "#27ae60"; label = "";
+                    }
+                    btn->setText(label);
+                    btn->setStyleSheet(
+                        QString("QPushButton { background:%1; color:white; border-radius:4px;"
+                                "font-size:11px; font-weight:bold; }"
+                                "QPushButton:hover { background:#2c3e50; }").arg(bg));
+
+                    connect(btn, &QPushButton::clicked, this,
+                            [this, salaId, r, c]() { onLocSelectat(salaId, r, c); });
+                }
+                grid->addWidget(btn, r, c + 1);
+            }
+        }
+
+        scroll->setWidget(grid_w);
+        pagelay->addWidget(scroll);
+
+        QLabel* info = new QLabel(
+            QString("%1 locuri libere din %2")
+                .arg(sala->getNumarLocuriLibere())
+                .arg(rows * cols), page);
+        info->setStyleSheet("font-size:12px; color:#7f8c8d;");
+        pagelay->addWidget(info);
+
+        tabs->addTab(page, QString::fromStdString(sala->getNume()));
+    }
+
+    main->addWidget(tabs);
+
+    QPushButton* closeBtn = new QPushButton("Inchide", this);
+    closeBtn->setStyleSheet(
+        "padding:8px 20px; background:#ecf0f1; border-radius:8px;"
+        "font-size:13px; color:#7f8c8d;");
+    connect(closeBtn, &QPushButton::clicked, this, &QDialog::reject);
+    main->addWidget(closeBtn, 0, Qt::AlignRight);
 }
 
-void SalaWidget::onLocSelectat(int rand, int col, int salaId) {
+void SalaWidget::onLocSelectat(int salaId, int rand, int col) {
     RezervareDialog dlg(cinema, filmId, salaId, rand, col, this);
-    if (dlg.exec() == QDialog::Accepted)
-        refresh();
-}
-
-void SalaWidget::refresh() {
-    setupUI();
+    if (dlg.exec() == QDialog::Accepted) {
+        // Reinitializeaza UI dupa rezervare
+        QLayout* old = this->layout();
+        QLayoutItem* item;
+        while ((item = old->takeAt(0))) {
+            delete item->widget();
+            delete item;
+        }
+        delete old;
+        setupUI();
+    }
 }

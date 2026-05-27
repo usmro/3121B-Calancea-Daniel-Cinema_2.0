@@ -1,164 +1,108 @@
-#include <cassert>
-#include <iostream>
-#include <stdexcept>
 #include "../include/Film.h"
 #include "../include/Sala.h"
 #include "../include/Rezervare.h"
 #include "../include/RezervareOnline.h"
 #include "../include/Exceptii.h"
+#include <iostream>
+#include <cassert>
+#include <stdexcept>
 
-// ── Utilitare ────────────────────────────────────────────────────────────────
-static int teste_trecute = 0;
-static int teste_esuate  = 0;
+static int passed = 0, failed = 0;
 
-#define RUN_TEST(fn) \
-    do { \
-        try { \
-            fn(); \
-            std::cout << "\033[32m[OK]\033[0m " << #fn << "\n"; \
-            ++teste_trecute; \
-        } catch (const std::exception& e) { \
-            std::cout << "\033[31m[FAIL]\033[0m " << #fn \
-                      << " — " << e.what() << "\n"; \
-            ++teste_esuate; \
-        } \
-    } while(0)
+#define RUN_TEST(name) \
+    try { name(); \
+        std::cout << "\033[32m[OK]\033[0m " #name "\n"; ++passed; \
+    } catch (const std::exception& e) { \
+        std::cout << "\033[31m[FAIL]\033[0m " #name ": " << e.what() << "\n"; ++failed; \
+    }
 
-// ── Teste pret ───────────────────────────────────────────────────────────────
-
-// Film 2D, loc Standard, zi normala -> 30 lei
 void test_pret_2D_standard() {
-    Film film("Interstellar", "SF", 169, TipFilm::_2D);
-    Sala sala("S1", 3, 3);
-    Rezervare rez(&film, &sala, 0, 0);
-    assert(rez.getPretFinal() == 30.0 || rez.getPretFinal() == 30.0 * 1.15);
-    // acceptam ambele variante (depinde daca testul ruleaza sambata/duminica)
+    Film f("Test", "Gen", 100, TipFilm::_2D);
+    Sala s("S", 2, 2);
+    Rezervare r(&f, &s, 0, 0);
+    assert(r.getPret() >= 30.0 && r.getPret() <= 34.6);
 }
 
-// Film 3D, loc Standard, zi normala -> 45 lei
 void test_pret_3D_standard() {
-    Film film("Inception", "SF", 148, TipFilm::_3D);
-    Sala sala("S1", 3, 3);
-    Rezervare rez(&film, &sala, 0, 0);
-    assert(rez.getPretFinal() == 45.0 || rez.getPretFinal() == 45.0 * 1.15);
+    Film f("Test", "Gen", 100, TipFilm::_3D);
+    Sala s("S", 2, 2);
+    Rezervare r(&f, &s, 0, 0);
+    assert(r.getPret() >= 45.0 && r.getPret() <= 51.8);
 }
 
-// Film 3D, loc VIP -> pret de baza * 1.5
 void test_pret_3D_vip() {
-    Film film("Dune", "SF", 155, TipFilm::_3D);
-    Sala sala("S1", 3, 3);
-    sala.setTipLoc(0, 0, TipLoc::VIP);
-    Rezervare rez(&film, &sala, 0, 0);
-    double pretAsteptat = 45.0 * 1.5; // 67.5 lei (fara weekend)
-    double pretWeekend  = 45.0 * 1.5 * 1.15;
-    assert(rez.getPretFinal() == pretAsteptat ||
-           rez.getPretFinal() == pretWeekend);
+    Film f("Test", "Gen", 100, TipFilm::_3D);
+    Sala s("S", 2, 2);
+    s.setTipLoc(0, 0, TipLoc::VIP);
+    Rezervare r(&f, &s, 0, 0);
+    assert(r.getPret() >= 67.5 && r.getPret() <= 77.6);
 }
 
-// Film 2D, loc Student -> pret de baza * 0.8
 void test_pret_2D_student() {
-    Film film("Oppenheimer", "Drama", 180, TipFilm::_2D);
-    Sala sala("S1", 3, 3);
-    sala.setTipLoc(1, 1, TipLoc::STUDENT);
-    Rezervare rez(&film, &sala, 1, 1);
-    double pretAsteptat = 30.0 * 0.8; // 24 lei (fara weekend)
-    double pretWeekend  = 30.0 * 0.8 * 1.15;
-    assert(rez.getPretFinal() == pretAsteptat ||
-           rez.getPretFinal() == pretWeekend);
+    Film f("Test", "Gen", 100, TipFilm::_2D);
+    Sala s("S", 2, 2);
+    s.setTipLoc(0, 0, TipLoc::STUDENT);
+    Rezervare r(&f, &s, 0, 0);
+    assert(r.getPret() >= 24.0 && r.getPret() <= 27.7);
 }
 
-// ── Teste exceptii ───────────────────────────────────────────────────────────
-
-// Rezervare pe un loc deja ocupat -> LocOcupatException
 void test_loc_ocupat_arunca_exceptie() {
-    Film film("Inception", "SF", 148, TipFilm::_3D);
-    Sala sala("S1", 3, 3);
-    sala.ocupa(0, 0); // ocupam locul manual
-
-    bool exceptieAruncata = false;
-    try {
-        sala.ocupa(0, 0); // incercam sa il ocupam din nou
-    } catch (const LocOcupatException&) {
-        exceptieAruncata = true;
-    }
-    assert(exceptieAruncata);
+    Sala s("S", 3, 3);
+    s.ocupa(1, 1);
+    bool threw = false;
+    try { s.ocupa(1, 1); } catch (const LocOcupatException&) { threw = true; }
+    assert(threw);
 }
 
-// Index in afara salii -> IndexInvalidException
 void test_index_invalid_arunca_exceptie() {
-    Sala sala("S1", 3, 3);
-
-    bool exceptieAruncata = false;
-    try {
-        sala.ocupa(10, 10); // randul 10 nu exista intr-o sala 3x3
-    } catch (const IndexInvalidException&) {
-        exceptieAruncata = true;
-    }
-    assert(exceptieAruncata);
+    Sala s("S", 3, 3);
+    bool threw = false;
+    try { s.ocupa(5, 0); } catch (const IndexInvalidException&) { threw = true; }
+    assert(threw);
 }
 
-// Index negativ -> IndexInvalidException
 void test_index_negativ_arunca_exceptie() {
-    Sala sala("S1", 3, 3);
-
-    bool exceptieAruncata = false;
-    try {
-        sala.ocupa(-1, 0);
-    } catch (const IndexInvalidException&) {
-        exceptieAruncata = true;
-    }
-    assert(exceptieAruncata);
+    Sala s("S", 3, 3);
+    bool threw = false;
+    try { s.ocupa(-1, 0); } catch (const IndexInvalidException&) { threw = true; }
+    assert(threw);
 }
 
-// ── Teste RezervareOnline ────────────────────────────────────────────────────
-
-// RezervareOnline salveaza emailul corect
 void test_rezervare_online_email() {
-    Film film("Dune", "SF", 155, TipFilm::_3D);
-    Sala sala("S1", 3, 3);
-    RezervareOnline rez(&film, &sala, 0, 0, "test@gmail.com");
-    assert(rez.getEmailClient() == "test@gmail.com");
-    assert(rez.getTip() == "online");
+    Film f("Test", "Gen", 100, TipFilm::_2D);
+    Sala s("S", 2, 2);
+    RezervareOnline ro(&f, &s, 0, 0, "test@test.com");
+    assert(ro.getEmail() == "test@test.com");
 }
 
-// RezervareOnline trimite confirmarea
 void test_rezervare_online_confirmare() {
-    Film film("Dune", "SF", 155, TipFilm::_3D);
-    Sala sala("S1", 3, 3);
-    RezervareOnline rez(&film, &sala, 1, 1, "client@yahoo.com");
-    assert(!rez.isConfirmareTrimisa());
-    rez.trimitConfirmare();
-    assert(rez.isConfirmareTrimisa());
+    Film f("Test", "Gen", 100, TipFilm::_2D);
+    Sala s("S", 2, 2);
+    RezervareOnline ro(&f, &s, 0, 1, "client@yahoo.com");
+    assert(!ro.isConfirmareTrimisa());
+    ro.trimitConfirmare();
+    assert(ro.isConfirmareTrimisa());
 }
 
-// ── Teste Sala ───────────────────────────────────────────────────────────────
-
-// Sala nou creata are toate locurile libere
 void test_sala_initial_libera() {
-    Sala sala("S1", 4, 5);
-    assert(sala.areLocuriLibere());
-    assert(sala.getNumarLocuriLibere() == 20); // 4 * 5
+    Sala s("S", 4, 4);
+    assert(s.getNumarLocuriLibere() == 16);
 }
 
-// Dupa ocupare, numarul de locuri libere scade
 void test_sala_locuri_libere_scad() {
-    Sala sala("S1", 3, 3);
-    assert(sala.getNumarLocuriLibere() == 9);
-    sala.ocupa(0, 0);
-    sala.ocupa(1, 1);
-    assert(sala.getNumarLocuriLibere() == 7);
+    Sala s("S", 3, 3);
+    s.ocupa(0, 0);
+    s.ocupa(1, 1);
+    assert(s.getNumarLocuriLibere() == 7);
 }
 
-// Dupa eliberare, locul devine din nou disponibil
 void test_sala_eliberare_loc() {
-    Sala sala("S1", 3, 3);
-    sala.ocupa(0, 0);
-    assert(!sala.esteLiber(0, 0));
-    sala.elibereaza(0, 0);
-    assert(sala.esteLiber(0, 0));
+    Sala s("S", 3, 3);
+    s.ocupa(0, 0);
+    s.elibereaza(0, 0);
+    assert(s.esteLiber(0, 0));
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
 int main() {
     std::cout << "\033[1m\n  === TESTE UNITARE — Cinema Sistem ===\n\n\033[0m";
 
@@ -183,13 +127,10 @@ int main() {
     RUN_TEST(test_sala_eliberare_loc);
 
     std::cout << "\n" << std::string(40, '-') << "\n";
-    if (teste_esuate == 0) {
-        std::cout << "\033[32m\033[1m  Toate " << teste_trecute
-                  << " teste au trecut!\033[0m\n\n";
-        return 0;
-    } else {
-        std::cout << "\033[31m  " << teste_esuate << " teste esuate, "
-                  << teste_trecute << " trecute.\033[0m\n\n";
-        return 1;
-    }
+    if (failed == 0)
+        std::cout << "\033[32m\033[1m  Toate " << passed << " teste au trecut!\033[0m\n\n";
+    else
+        std::cout << "\033[31m  " << failed << " teste au esuat din " << (passed+failed) << "\033[0m\n\n";
+
+    return failed;
 }

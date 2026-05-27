@@ -11,8 +11,8 @@
 class Cinematograf : public ICinemaService {
 private:
     std::string  nume;
-    std::vector<Film>                      filme;
-    std::vector<std::unique_ptr<Sala>>     sali;
+    std::vector<Film>                       filme;
+    std::vector<std::unique_ptr<Sala>>      sali;
     std::vector<std::unique_ptr<Rezervare>> rezervari;
 
     Film* findFilm(int filmId) const;
@@ -34,11 +34,11 @@ public:
     void afiseazaRezervari()          const override;
 
     void realizeazaRezervare(int filmId, int salaId,
-                             int rand, int col)          override;
+                             int rand, int col) override;
     void realizeazaRezervareOnline(int filmId, int salaId,
                                    int rand, int col,
                                    const std::string& email) override;
-    void anuleazaRezervare(int rezervareId)              override;
+    void anuleazaRezervare(int rezervareId) override;
 
     std::vector<Film*>      cautaFilme(const std::string& titlu) const override;
     std::vector<Film*>      filtreazaDupaTip(TipFilm tip)        const override;

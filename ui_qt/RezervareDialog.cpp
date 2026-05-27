@@ -1,7 +1,5 @@
 #include "RezervareDialog.h"
-#include "../include/Film.h"
-#include "../include/Sala.h"
-#include "../include/Exceptii.h"
+#include "../include/Rezervare.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -9,144 +7,112 @@
 #include <QMessageBox>
 #include <ctime>
 
-RezervareDialog::RezervareDialog(Cinematograf& cinema,
-                                 int filmId, int salaId,
-                                 int rand, int col,
-                                 QWidget* parent)
+RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
+                                 int rand, int col, QWidget* parent)
     : QDialog(parent), cinema(cinema),
-      filmId(filmId), salaId(salaId),
-      rand(rand), col(col)
+      filmId(filmId), salaId(salaId), rand(rand), col(col)
 {
-    setWindowTitle("Rezervare bilet");
+    setWindowTitle("Confirmare Rezervare");
     setFixedSize(420, 360);
-    setupUI();
-}
+    setStyleSheet("QDialog { background:#f5f6fa; }");
 
-void RezervareDialog::setupUI() {
-    // Gaseste filmul
-    Film* film = nullptr;
-    for (auto* f : cinema.getFilme())
-        if (f->getId() == filmId) { film = f; break; }
+    QVBoxLayout* lay = new QVBoxLayout(this);
+    lay->setContentsMargins(24, 20, 24, 20);
+    lay->setSpacing(12);
 
-    Sala* sala = nullptr;
-    try { sala = cinema.getSala(salaId); } catch (...) {}
-
-    QVBoxLayout* layout = new QVBoxLayout(this);
-    layout->setContentsMargins(28, 24, 28, 24);
-    layout->setSpacing(14);
-
-    // Titlu
-    QLabel* title = new QLabel("Confirmare rezervare", this);
-    title->setStyleSheet("font-size: 20px; font-weight: bold; color: #2c3e50;");
-    layout->addWidget(title);
-
-    QFrame* separator = new QFrame(this);
-    separator->setFrameShape(QFrame::HLine);
-    separator->setStyleSheet("color: #ecf0f1;");
-    layout->addWidget(separator);
+    // Header
+    QLabel* header = new QLabel("Rezervare Loc", this);
+    header->setStyleSheet("font-size:20px; font-weight:bold; color:#2c3e50;");
+    lay->addWidget(header);
 
     // Info film
-    if (film) {
-        QLabel* filmLabel = new QLabel(
-            QString("%1  (%2)")
-                .arg(QString::fromStdString(film->getTitlu()))
-                .arg(QString::fromStdString(film->tipToString())),
-            this);
-        filmLabel->setStyleSheet("font-size: 15px; color: #34495e; font-weight: bold;");
-        layout->addWidget(filmLabel);
-    }
+    try {
+        Sala* sala  = cinema.getSala(salaId);
+        Film* film  = nullptr;
+        for (auto* f : cinema.getFilme())
+            if (f->getId() == filmId) { film = f; break; }
 
-    // Info loc
-    QString tipLocStr = "Standard";
-    if (sala) {
-        TipLoc tip = sala->getTipLoc(rand, col);
-        if (tip == TipLoc::VIP)     tipLocStr = "VIP";
-        if (tip == TipLoc::STUDENT) tipLocStr = "Student";
-    }
-    QLabel* locLabel = new QLabel(
-        QString("Rand %1, Coloana %2  —  %3")
-            .arg(rand + 1).arg(col + 1).arg(tipLocStr),
-        this);
-    locLabel->setStyleSheet("font-size: 13px; color: #7f8c8d;");
-    layout->addWidget(locLabel);
+        if (film) {
+            QLabel* filmLbl = new QLabel(
+                QString("<b>Film:</b> %1 (%2)")
+                    .arg(QString::fromStdString(film->getTitlu()))
+                    .arg(QString::fromStdString(film->tipToString())), this);
+            filmLbl->setStyleSheet("font-size:13px; color:#34495e;");
+            lay->addWidget(filmLbl);
+        }
 
-    // Calcul pret
-    double pret = film ? (film->getTip() == TipFilm::_3D ? 45.0 : 30.0) : 0;
-    if (sala) {
-        TipLoc tip = sala->getTipLoc(rand, col);
-        if (tip == TipLoc::VIP)     pret *= 1.50;
-        if (tip == TipLoc::STUDENT) pret *= 0.80;
-    }
-    std::time_t now = std::time(nullptr);
-    std::tm* t = std::localtime(&now);
-    bool weekend = (t->tm_wday == 0 || t->tm_wday == 6);
-    if (weekend) pret *= 1.15;
+        QLabel* locLbl = new QLabel(
+            QString("<b>Loc:</b> Rand %1, Coloana %2")
+                .arg(rand + 1).arg(col + 1), this);
+        locLbl->setStyleSheet("font-size:13px; color:#34495e;");
+        lay->addWidget(locLbl);
 
-    QLabel* pretLabel = new QLabel(
-        QString("Pret: %1 lei%2")
-            .arg(pret, 0, 'f', 0)
-            .arg(weekend ? "  (include majorare weekend)" : ""),
-        this);
-    pretLabel->setStyleSheet("font-size: 16px; font-weight: bold; color: #27ae60;");
-    layout->addWidget(pretLabel);
+        TipLoc tipLoc = sala->getTipLoc(rand, col);
+        QString tipStr = tipLoc == TipLoc::VIP ? "VIP (+50%)" :
+                         tipLoc == TipLoc::STUDENT ? "Student (-20%)" : "Standard";
+        QLabel* tipLbl = new QLabel(QString("<b>Tip loc:</b> %1").arg(tipStr), this);
+        tipLbl->setStyleSheet("font-size:13px; color:#34495e;");
+        lay->addWidget(tipLbl);
+
+        // Calcul pret aproximativ
+        if (film) {
+            double pret = (film->getTip() == TipFilm::_3D) ? 45.0 : 30.0;
+            if (tipLoc == TipLoc::VIP)     pret *= 1.5;
+            if (tipLoc == TipLoc::STUDENT) pret *= 0.8;
+            QLabel* pretLbl = new QLabel(
+                QString("<b>Pret:</b> %1 lei").arg(pret), this);
+            pretLbl->setStyleSheet("font-size:14px; color:#27ae60; font-weight:bold;");
+            lay->addWidget(pretLbl);
+        }
+    } catch (...) {}
+
+    lay->addSpacing(8);
 
     // Email
-    QLabel* emailLabel = new QLabel("Email pentru confirmare:", this);
-    emailLabel->setStyleSheet("font-size: 13px; color: #7f8c8d;");
-    layout->addWidget(emailLabel);
+    QLabel* emailLbl = new QLabel("Email pentru confirmare:", this);
+    emailLbl->setStyleSheet("font-size:13px; color:#34495e;");
+    lay->addWidget(emailLbl);
 
-    emailInput = new QLineEdit(this);
-    emailInput->setPlaceholderText("exemplu@gmail.com");
-    emailInput->setStyleSheet(
-        "padding: 10px; border: 1.5px solid #ddd;"
-        "border-radius: 8px; font-size: 14px;"
-    );
-    layout->addWidget(emailInput);
+    emailEdit = new QLineEdit(this);
+    emailEdit->setPlaceholderText("exemplu@email.com");
+    emailEdit->setStyleSheet(
+        "padding:9px 12px; border:1.5px solid #ddd; border-radius:8px;"
+        "font-size:13px; background:white;");
+    lay->addWidget(emailEdit);
 
-    layout->addStretch();
+    lay->addStretch();
 
     // Butoane
     QHBoxLayout* btnRow = new QHBoxLayout();
-
     QPushButton* cancelBtn = new QPushButton("Anuleaza", this);
     cancelBtn->setStyleSheet(
-        "QPushButton { background: #ecf0f1; color: #7f8c8d; border: none;"
-        "  border-radius: 8px; padding: 10px 20px; font-size: 13px; }"
-        "QPushButton:hover { background: #bdc3c7; }"
-    );
-    connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
-
-    QPushButton* confirmBtn = new QPushButton("Confirma rezervarea", this);
+        "padding:10px 20px; border-radius:8px; font-size:13px;"
+        "background:#ecf0f1; color:#7f8c8d;");
+    QPushButton* confirmBtn = new QPushButton("Confirma Rezervarea", this);
     confirmBtn->setStyleSheet(
-        "QPushButton { background: #3498db; color: white; border: none;"
-        "  border-radius: 8px; padding: 10px 20px; font-size: 13px; font-weight: bold; }"
-        "QPushButton:hover { background: #2980b9; }"
-    );
-    connect(confirmBtn, &QPushButton::clicked, this, &RezervareDialog::onConfirm);
+        "padding:10px 20px; border-radius:8px; font-size:13px; font-weight:bold;"
+        "background:#27ae60; color:white;");
 
     btnRow->addWidget(cancelBtn);
     btnRow->addWidget(confirmBtn);
-    layout->addLayout(btnRow);
+    lay->addLayout(btnRow);
+
+    connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
+    connect(confirmBtn, &QPushButton::clicked, this, &RezervareDialog::onConfirm);
 }
 
 void RezervareDialog::onConfirm() {
-    std::string email = emailInput->text().trimmed().toStdString();
-
-    if (email.empty()) {
-        QMessageBox::warning(this, "Email lipsa",
-                             "Te rugam sa introduci adresa de email.");
+    QString email = emailEdit->text().trimmed();
+    if (email.isEmpty()) {
+        QMessageBox::warning(this, "Eroare", "Introduceti adresa de email!");
         return;
     }
-
     try {
-        cinema.realizeazaRezervareOnline(filmId, salaId, rand, col, email);
-        QMessageBox::information(this, "Rezervare confirmata!",
-            QString("Rezervarea a fost realizata cu succes!\n"
-                    "Confirmarea a fost trimisa la: %1")
-                .arg(QString::fromStdString(email)));
+        cinema.realizeazaRezervareOnline(filmId, salaId, rand, col, email.toStdString());
+        QMessageBox::information(this, "Succes",
+            "Rezervarea a fost confirmata!\nO confirmare a fost trimisa la: " + email);
         accept();
-    } catch (const CinemaException& e) {
-        QMessageBox::critical(this, "Eroare",
-                              QString::fromStdString(e.what()));
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Eroare", QString::fromStdString(e.what()));
     }
 }

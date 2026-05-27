@@ -1,5 +1,5 @@
 #pragma once
-#include <exception>
+#include <stdexcept>
 #include <string>
 
 class CinemaException : public std::exception {
@@ -13,15 +13,15 @@ public:
 class LocOcupatException : public CinemaException {
 public:
     LocOcupatException(int rand, int col)
-        : CinemaException("Locul (" + std::to_string(rand) + ", " +
-                          std::to_string(col) + ") este deja ocupat!") {}
+        : CinemaException("Locul [" + std::to_string(rand) + "]["
+                          + std::to_string(col) + "] este deja ocupat!") {}
 };
 
 class IndexInvalidException : public CinemaException {
 public:
     IndexInvalidException(int rand, int col)
-        : CinemaException("Index invalid: randul " + std::to_string(rand) +
-                          ", coloana " + std::to_string(col) + " nu exista!") {}
+        : CinemaException("Index invalid: rand=" + std::to_string(rand)
+                          + ", col=" + std::to_string(col)) {}
 };
 
 class FilmNotFoundException : public CinemaException {

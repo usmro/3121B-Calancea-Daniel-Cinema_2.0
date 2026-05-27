@@ -9,18 +9,15 @@
 #include "../ui_qt/MainWindow.h"
 #endif
 
-// Populeaza cinematograful cu date demo pentru prezentare
 static void seedDemoData(Cinematograf& cinema) {
-    cinema.adaugaFilm(Film("Inception",       "SF",      148, TipFilm::_3D, "Un hot de vise"));
-    cinema.adaugaFilm(Film("Interstellar",    "SF",      169, TipFilm::_2D, "Calatorie in spatiu"));
-    cinema.adaugaFilm(Film("Dune: Part Two",  "SF",      167, TipFilm::_3D, "Continuarea epicei"));
-    cinema.adaugaFilm(Film("Oppenheimer",     "Drama",   180, TipFilm::_2D, "Parintele bombei atomice"));
-    cinema.adaugaFilm(Film("The Dark Knight", "Actiune", 152, TipFilm::_2D, "Batman vs Joker"));
+    cinema.adaugaFilm(Film("Inception",       "SF",      148, TipFilm::_3D, "Un hot de vise intra in mintile oamenilor pentru a le fura secretele."));
+    cinema.adaugaFilm(Film("Interstellar",    "SF",      169, TipFilm::_2D, "Un grup de astronauti calatoresc prin univers in cautarea unui nou camin."));
+    cinema.adaugaFilm(Film("Dune: Part Two",  "SF",      167, TipFilm::_3D, "Paul Atreides se uneste cu Fremen pentru a razbuna familia sa."));
+    cinema.adaugaFilm(Film("Oppenheimer",     "Drama",   180, TipFilm::_2D, "Povestea fizicianului care a creat prima bomba atomica din lume."));
+    cinema.adaugaFilm(Film("The Dark Knight", "Actiune", 152, TipFilm::_2D, "Batman infrunta haosul dezlantuit de Joker in Gotham City."));
 
     Sala* s1 = new Sala("Sala 1", 6, 8);
-    // Cateva locuri VIP in primul rand
     for (int c = 0; c < 8; ++c) s1->setTipLoc(0, c, TipLoc::VIP);
-    // Cateva locuri Student in ultimul rand
     for (int c = 0; c < 8; ++c) s1->setTipLoc(5, c, TipLoc::STUDENT);
     cinema.adaugaSala(s1);
 
@@ -35,13 +32,11 @@ static void printUsage(const std::string& prog) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        printUsage(argv[0]);
-        return 1;
-    }
+    if (argc < 2) { printUsage(argv[0]); return 1; }
 
     std::string mod = argv[1];
     Cinematograf cinema("Cinema Central");
+    seedDemoData(cinema);
 
     if (mod == "--staff") {
         std::cout << Color::CYAN << Color::BOLD
@@ -63,10 +58,8 @@ int main(int argc, char* argv[]) {
             std::cerr << "Rol invalid!\n";
             return 1;
         }
-
     } else if (mod == "--client") {
 #ifdef BUILD_QT_UI
-        seedDemoData(cinema);
         QApplication app(argc, argv);
         MainWindow window(cinema);
         window.show();
@@ -82,6 +75,5 @@ int main(int argc, char* argv[]) {
         printUsage(argv[0]);
         return 1;
     }
-
     return 0;
 }

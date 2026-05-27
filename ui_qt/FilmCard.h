@@ -1,10 +1,11 @@
 #pragma once
 #include <QFrame>
+#include <QLabel>
+#include <QPushButton>
 #include "../include/Film.h"
 
 class FilmCard : public QFrame {
     Q_OBJECT
-
 public:
     explicit FilmCard(Film* film, QWidget* parent = nullptr);
 
@@ -13,5 +14,4 @@ signals:
 
 private:
     Film* film;
-    void setupUI();
 };
