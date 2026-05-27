@@ -12,6 +12,7 @@ set(COMMON_SOURCES
     src/Rezervare.cpp
     src/RezervareOnline.cpp
     src/Cinematograf.cpp
+    src/Persistenta.cpp
     ui_terminal/UITerminal.cpp
     ui_terminal/UIAdmin.cpp
     ui_terminal/UIAngajat.cpp

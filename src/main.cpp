@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "../include/Cinematograf.h"
+#include "../include/Persistenta.h"
 #include "../ui_terminal/UIAdmin.h"
 #include "../ui_terminal/UIAngajat.h"
 
@@ -8,6 +9,9 @@
 #include <QApplication>
 #include "../ui_qt/MainWindow.h"
 #endif
+
+// Fisierul in care se salveaza rezervarile
+static const std::string FISIER_REZERVARI = "rezervari.csv";
 
 static void seedDemoData(Cinematograf& cinema) {
     cinema.adaugaFilm(Film("Inception",       "SF",      148, TipFilm::_3D, "Un hot de vise intra in mintile oamenilor pentru a le fura secretele."));
@@ -36,7 +40,12 @@ int main(int argc, char* argv[]) {
 
     std::string mod = argv[1];
     Cinematograf cinema("Cinema Central");
+
+    // 1. Incarca datele demo
     seedDemoData(cinema);
+
+    // 2. Incarca rezervarile salvate anterior (daca exista)
+    Persistenta::incarca(FISIER_REZERVARI, cinema);
 
     if (mod == "--staff") {
         std::cout << Color::CYAN << Color::BOLD
@@ -58,12 +67,17 @@ int main(int argc, char* argv[]) {
             std::cerr << "Rol invalid!\n";
             return 1;
         }
+
+        // 3. Salveaza rezervarile la iesire (doar pentru --staff)
+        Persistenta::salveaza(FISIER_REZERVARI, cinema);
+
     } else if (mod == "--client") {
 #ifdef BUILD_QT_UI
         QApplication app(argc, argv);
         MainWindow window(cinema);
         window.show();
         return app.exec();
+        // Nota: Qt salveaza dupa fiecare rezervare din RezervareDialog
 #else
         std::cerr << Color::RED
                   << "UI-ul Qt nu este disponibil in aceasta compilare.\n"
@@ -75,5 +89,6 @@ int main(int argc, char* argv[]) {
         printUsage(argv[0]);
         return 1;
     }
+
     return 0;
 }

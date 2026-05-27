@@ -1,11 +1,13 @@
 #include "RezervareDialog.h"
 #include "../include/Rezervare.h"
+#include "../include/Persistenta.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QMessageBox>
-#include <ctime>
+
+static const std::string FISIER_REZERVARI = "rezervari.csv";
 
 RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
                                  int rand, int col, QWidget* parent)
@@ -20,12 +22,10 @@ RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
     lay->setContentsMargins(24, 20, 24, 20);
     lay->setSpacing(12);
 
-    // Header
     QLabel* header = new QLabel("Rezervare Loc", this);
     header->setStyleSheet("font-size:20px; font-weight:bold; color:#2c3e50;");
     lay->addWidget(header);
 
-    // Info film
     try {
         Sala* sala  = cinema.getSala(salaId);
         Film* film  = nullptr;
@@ -54,7 +54,6 @@ RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
         tipLbl->setStyleSheet("font-size:13px; color:#34495e;");
         lay->addWidget(tipLbl);
 
-        // Calcul pret aproximativ
         if (film) {
             double pret = (film->getTip() == TipFilm::_3D) ? 45.0 : 30.0;
             if (tipLoc == TipLoc::VIP)     pret *= 1.5;
@@ -68,7 +67,6 @@ RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
 
     lay->addSpacing(8);
 
-    // Email
     QLabel* emailLbl = new QLabel("Email pentru confirmare:", this);
     emailLbl->setStyleSheet("font-size:13px; color:#34495e;");
     lay->addWidget(emailLbl);
@@ -82,7 +80,6 @@ RezervareDialog::RezervareDialog(Cinematograf& cinema, int filmId, int salaId,
 
     lay->addStretch();
 
-    // Butoane
     QHBoxLayout* btnRow = new QHBoxLayout();
     QPushButton* cancelBtn = new QPushButton("Anuleaza", this);
     cancelBtn->setStyleSheet(
@@ -109,6 +106,10 @@ void RezervareDialog::onConfirm() {
     }
     try {
         cinema.realizeazaRezervareOnline(filmId, salaId, rand, col, email.toStdString());
+
+        // Salveaza imediat dupa rezervare pentru a persista datele
+        Persistenta::salveaza(FISIER_REZERVARI, cinema);
+
         QMessageBox::information(this, "Succes",
             "Rezervarea a fost confirmata!\nO confirmare a fost trimisa la: " + email);
         accept();
