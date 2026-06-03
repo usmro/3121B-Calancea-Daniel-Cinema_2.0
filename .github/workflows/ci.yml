@@ -5,7 +5,7 @@ on:
     branches: [ develop, feature/** ]
   pull_request:
     branches: [ develop ]
-  workflow_dispatch:   # permite rularea manuala din GitHub
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -23,6 +23,7 @@ jobs:
           g++ -std=c++17 -Wall -Iinclude \
             src/Film.cpp src/Sala.cpp src/Rezervare.cpp \
             src/RezervareOnline.cpp src/Cinematograf.cpp \
+            src/Persistenta.cpp \
             ui_terminal/UITerminal.cpp \
             ui_terminal/UIAdmin.cpp \
             ui_terminal/UIAngajat.cpp \
@@ -34,6 +35,7 @@ jobs:
           g++ -std=c++17 -Iinclude \
             src/Film.cpp src/Sala.cpp src/Rezervare.cpp \
             src/RezervareOnline.cpp src/Cinematograf.cpp \
+            src/Persistenta.cpp \
             tests/test_rezervari.cpp \
             -o cinema_tests
 
