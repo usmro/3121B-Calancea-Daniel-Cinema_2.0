@@ -4,27 +4,10 @@
 
 int Sala::nextId = 1;
 
-static void initVectors(int nrRanduri, int nrColoane,
-                        std::vector<std::vector<bool>>& ocupat,
-                        std::vector<std::vector<TipLoc>>& tipuriLocuri) {
-    ocupat       = std::vector<std::vector<bool>>(nrRanduri, std::vector<bool>(nrColoane, false));
-    tipuriLocuri = std::vector<std::vector<TipLoc>>(nrRanduri, std::vector<TipLoc>(nrColoane, TipLoc::STANDARD));
-}
-
-// Constructor normal
 Sala::Sala(const std::string& nume, int nrRanduri, int nrColoane)
-    : id(nextId++), nume(nume), nrRanduri(nrRanduri), nrColoane(nrColoane)
-{
-    initVectors(nrRanduri, nrColoane, ocupat, tipuriLocuri);
-}
-
-// Constructor pentru incarcare din fisier
-Sala::Sala(int id, const std::string& nume, int nrRanduri, int nrColoane)
-    : id(id), nume(nume), nrRanduri(nrRanduri), nrColoane(nrColoane)
-{
-    initVectors(nrRanduri, nrColoane, ocupat, tipuriLocuri);
-    if (id >= nextId) nextId = id + 1;
-}
+    : id(nextId++), nume(nume), nrRanduri(nrRanduri), nrColoane(nrColoane),
+      ocupat(nrRanduri, std::vector<bool>(nrColoane, false)),
+      tipuriLocuri(nrRanduri, std::vector<TipLoc>(nrColoane, TipLoc::STANDARD)) {}
 
 void Sala::valideazaIndex(int rand, int col) const {
     if (rand < 0 || rand >= nrRanduri || col < 0 || col >= nrColoane)
